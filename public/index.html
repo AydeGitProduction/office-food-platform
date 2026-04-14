@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Office Eats</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg:           #0f172a;
+      --surface:      #1e293b;
+      --surface2:     #334155;
+      --border:       #475569;
+      --text:         #f1f5f9;
+      --text-muted:   #94a3b8;
+      --primary:      #6366f1;
+      --primary-hov:  #4f46e5;
+      --success:      #22c55e;
+      --warning:      #eab308;
+      --danger:       #ef4444;
+      --orange:       #f97316;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 57px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+    .logo svg { color: var(--primary); }
+
+    .role-switcher {
+      display: flex;
+      gap: 2px;
+      background: var(--bg);
+      padding: 4px;
+      border-radius: 10px;
+      margin-left: auto;
+    }
+
+    .role-btn {
+      padding: 6px 16px;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .role-btn.active { background: var(--primary); color: #fff; }
+    .role-btn:not(.active):hover { color: var(--text); }
+
+    /* ── App Layout ──────────────────────────────────────────────────────── */
+    .app-layout {
+      display: flex;
+      height: calc(100vh - 57px);
+    }
+
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+    }
+
+    /* ── Cart Sidebar ────────────────────────────────────────────────────── */
+    .cart-sidebar {
+      width: 300px;
+      min-width: 300px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cart-head-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+    }
+    .cart-badge {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 999px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .cart-restaurant-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .cart-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px;
+    }
+
+    .cart-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      gap: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cart-item-name { flex: 1; font-size: 13px; font-weight: 500; }
+    .cart-item-qty { font-size: 12px; color: var(--text-muted); }
+    .cart-item-price { font-size: 13px; font-weight: 600; }
+    .cart-remove-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .cart-remove-btn:hover { color: var(--danger); background: rgba(239,68,68,.1); }
+
+    .cart-foot {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+    }
+    .cart-subtotal {
+      display: flex;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    /* ── Forms ───────────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 10px; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+    .form-select,
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      transition: border-color 0.15s;
+    }
+    .form-select:focus,
+    .form-input:focus,
+    .form-textarea:focus { outline: none; border-color: var(--primary); }
+    .form-textarea { resize: vertical; min-height: 56px; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hov); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-ghost {
+      width: 100%;
+      padding: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 7px;
+    }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+    /* ── Nav Tabs ────────────────────────────────────────────────────────── */
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .nav-tab {
+      padding: 10px 22px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .nav-tab:not(.active):hover { color: var(--text); }
+
+    /* ── Filter Bar ──────────────────────────────────────────────────────── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .filter-chip {
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .filter-chip:not(.active):hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Restaurant Grid ─────────────────────────────────────────────────── */
+    .restaurant-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 16px;
+    }
+
+    .restaurant-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .restaurant-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(99,102,241,.18);
+    }
+    .restaurant-name { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+    .restaurant-meta { display: flex; gap: 18px; flex-wrap: wrap; }
+    .restaurant-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ── Menu Page ───────────────────────────────────────────────────────── */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-bottom: 18px;
+      transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    .menu-header { margin-bottom: 26px; }
+    .menu-title { font-size: 28px; font-weight: 800; margin-bottom: 5px; }
+    .menu-subtitle { color: var(--text-muted); font-size: 14px; }
+
+    .category-block { margin-bottom: 32px; }
+    .category-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .menu-items-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .menu-item-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.15s;
+    }
+    .menu-item-card:hover { border-color: var(--surface2); }
+
+    .menu-item-info { flex: 1; min-width: 0; }
+    .menu-item-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .menu-item-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dietary-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .tag-vegan       { background: rgba(34,197,94,.18); color: #22c55e; }
+    .tag-vegetarian  { background: rgba(132,204,22,.18); color: #84cc16; }
+    .tag-gluten-free { background: rgba(251,191,36,.18); color: #fbbf24; }
+
+    .menu-item-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      min-width: 90px;
+    }
+    .menu-item-price { font-size: 17px; font-weight: 800; color: var(--primary); }
+
+    .qty-control { display: flex; align-items: center; gap: 8px; }
+    .qty-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+    .qty-btn:hover { background: var(--primary); border-color: var(--primary); }
+    .qty-num { width: 24px; text-align: center; font-weight: 700; font-size: 14px; }
+
+    .add-btn {
+      padding: 7px 16px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .add-btn:hover { background: var(--primary-hov); }
+
+    /* ── Order History ────────────────────────────────────────────────────── */
+    .orders-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .order-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+    .order-card:hover { border-color: var(--surface2); }
+
+    .order-head {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .order-head:hover { background: rgba(255,255,255,.03); }
+
+    .order-info { flex: 1; min-width: 0; }
+    .order-restaurant { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+    .order-meta { font-size: 13px; color: var(--text-muted); }
+    .order-total { font-size: 16px; font-weight: 800; white-space: nowrap; }
+
+    .status-badge {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: capitalize;
+      white-space: nowrap;
+    }
+    .status-placed     { background: rgba(59,130,246,.18);  color: #3b82f6; }
+    .status-confirmed  { background: rgba(234,179,8,.18);   color: #eab308; }
+    .status-preparing  { background: rgba(249,115,22,.18);  color: #f97316; }
+    .status-delivered  { background: rgba(34,197,94,.18);   color: #22c55e; }
+    .status-cancelled  { background: rgba(239,68,68,.18);   color: #ef4444; }
+
+    .order-detail {
+      padding: 12px 20px 16px;
+      border-top: 1px solid var(--border);
+      display: none;
+    }
+    .order-detail.open { display: block; }
+    .order-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 4px 0;
+      color: var(--text-muted);
+    }
+    .order-notes-row {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Loading ─────────────────────────────────────────────────────────── */
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 48px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ───────────────────────────────────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      top: 72px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 260px;
+      max-width: 360px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.45);
+      animation: toast-in .25s ease;
+      pointer-events: auto;
+    }
+    .toast-success { background: var(--success); color: #fff; }
+    .toast-error   { background: var(--danger);  color: #fff; }
+    @keyframes toast-in {
+      from { transform: translateX(110%); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+
+    /* ── Page transition ─────────────────────────────────────────────────── */
+    .view { animation: fadein .2s ease; }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Placeholder ─────────────────────────────────────────────────────── */
+    .placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 60%;
+      gap: 14px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .placeholder h2 { font-size: 22px; font-weight: 700; color: var(--text); }
+    .placeholder p  { font-size: 14px; line-height: 1.6; }
+
+    /* ── Responsive ──────────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .app-layout { flex-direction: column-reverse; height: auto; overflow: visible; }
+      body { overflow: auto; }
+      .cart-sidebar { width: 100%; min-width: unset; border-left: none; border-top: 1px solid var(--border); max-height: 320px; }
+      .main-content { height: auto; overflow: visible; }
+    }
+    @media (max-width: 600px) {
+      .restaurant-grid { grid-template-columns: 1fr; }
+      .header { padding: 0 14px; }
+      .main-content { padding: 16px; }
+      .role-btn { padding: 5px 10px; font-size: 12px; }
+    }
+
+    /* ── Admin / Partner — hide sidebar ───────────────────────────────── */
+    .hide-sidebar .cart-sidebar { display: none; }
+
+    /* ── Stat Cards ──────────────────────────────────────────────────── */
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 20px;
+    }
+    .stat-label  { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .stat-value  { font-size: 30px; font-weight: 800; line-height: 1; }
+    .stat-sub    { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+    /* ── Charts ──────────────────────────────────────────────────────── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .chart-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .chart-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+    .chart-container { position: relative; height: 220px; }
+
+    /* ── Data Table ─────────────────────────────────────────────────── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      overflow-x: auto;
+    }
+    .data-table { width: 100%; border-collapse: collapse; min-width: 560px; }
+    .data-table th {
+      text-align: left;
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(71,85,105,.22);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(255,255,255,.025); }
+
+    /* ── Admin filters ──────────────────────────────────────────────── */
+    .admin-filters {
+      display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; align-items: center;
+    }
+    .admin-filters .form-select { width: auto; min-width: 140px; }
+    .admin-filters label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+    /* ── Budget cards ────────────────────────────────────────────────── */
+    .budget-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .budget-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .budget-card.over-budget { border-color: var(--warning); }
+    .budget-office { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+    .budget-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; color: var(--text-muted); border-bottom: 1px solid rgba(71,85,105,.18); }
+    .budget-row:last-of-type { border-bottom: none; }
+    .budget-row strong { color: var(--text); }
+    .budget-alert { margin-top: 12px; padding: 8px 12px; background: rgba(234,179,8,.12); border-radius: 8px; font-size: 12px; color: var(--warning); font-weight: 600; }
+
+    /* ── Queue cards (incoming orders) ─────────────────────────────── */
+    .queue-grid { display: flex; flex-direction: column; gap: 14px; }
+    .queue-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .queue-card.status-placed    { border-left-color: #3b82f6; }
+    .queue-card.status-confirmed { border-left-color: #eab308; }
+    .queue-card.status-preparing { border-left-color: #f97316; }
+    .queue-card.status-delivered { border-left-color: #22c55e; opacity: .65; }
+    .queue-card.status-cancelled { border-left-color: #ef4444; opacity: .5; }
+    .queue-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .queue-id   { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+    .queue-emp  { font-size: 15px; font-weight: 700; flex: 1; }
+    .queue-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+    .queue-items { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+    .queue-item-line { font-size: 13px; color: var(--text-muted); }
+    .queue-total { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 12px; }
+    .queue-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-sm { padding: 6px 14px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
+    .btn-sm-primary { background: var(--primary); color: #fff; }
+    .btn-sm-primary:hover { background: var(--primary-hov); }
+    .btn-sm-success { background: var(--success); color: #fff; }
+    .btn-sm-success:hover { background: #16a34a; }
+    .btn-sm-orange  { background: var(--orange); color: #fff; }
+    .btn-sm-orange:hover  { background: #ea6c0e; }
+    .btn-sm-danger  { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+    .btn-sm-danger:hover  { background: rgba(239,68,68,.1); }
+    .btn-sm-ghost   { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-sm-ghost:hover   { background: var(--surface2); color: var(--text); }
+
+    /* ── Menu management ────────────────────────────────────────────── */
+    .menu-manage-section { margin-bottom: 32px; }
+    .menu-manage-list    { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .menu-manage-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+    }
+    .mmi-top { display: flex; align-items: center; gap: 12px; }
+    .mmi-info { flex: 1; min-width: 0; }
+    .mmi-name { font-size: 15px; font-weight: 700; }
+    .mmi-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .mmi-price { font-size: 15px; font-weight: 800; color: var(--primary); white-space: nowrap; }
+    .mmi-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .avail-btn {
+      padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; cursor: pointer; font-size: 11px; font-weight: 700;
+      color: var(--text-muted); transition: all .15s;
+    }
+    .avail-btn.on  { background: rgba(34,197,94,.15); color: var(--success); border-color: var(--success); }
+    .avail-btn:not(.on):hover { background: rgba(239,68,68,.1); color: var(--danger); }
+    .edit-form {
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .edit-form .form-input { font-size: 13px; }
+    .edit-form-actions { grid-column: 1/-1; display: flex; gap: 8px; margin-top: 4px; }
+
+    /* ── Add item form ───────────────────────────────────────────────── */
+    .add-item-card {
+      background: var(--surface); border: 2px dashed var(--border);
+      border-radius: 14px; padding: 22px;
+    }
+    .add-item-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── Revenue tab ────────────────────────────────────────────────── */
+    .rev-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
+
+    /* ── Section heading ────────────────────────────────────────────── */
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .section-title { font-size: 20px; font-weight: 800; }
+    .section-sub   { font-size: 13px; color: var(--text-muted); }
+
+    /* ── Polling dot ────────────────────────────────────────────────── */
+    .poll-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .poll-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pdot 2s infinite; }
+    @keyframes pdot { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+    @media (max-width: 900px) {
+      .charts-row { grid-template-columns: 1fr; }
+      .form-row   { grid-template-columns: 1fr; }
+      .edit-form  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <i data-lucide="utensils" style="width:20px;height:20px"></i>
+    Office Eats
+  </div>
+  <div class="role-switcher">
+    <button class="role-btn active" onclick="switchRole('employee', this)">Employee</button>
+    <button class="role-btn" onclick="switchRole('admin', this)">Admin</button>
+    <button class="role-btn" onclick="switchRole('partner', this)">Restaurant Partner</button>
+  </div>
+</header>
+
+<div class="app-layout">
+  <main class="main-content" id="main-content">
+    <div class="spinner"></div>
+  </main>
+  <aside class="cart-sidebar" id="cart-sidebar"></aside>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const API = "http://localhost:4567";
+
+// ── State ────────────────────────────────────────────────────────────────────
+const S = {
+  role: 'employee',
+  view: 'restaurants',          // restaurants | menu | orders
+  restaurants: [],
+  restaurant: null,             // selected restaurant
+  menuItems: [],
+  employees: [],
+  offices: [],
+  orders: [],
+  cart: { restaurantId: null, restaurantName: '', items: [] },
+  selectedEmployeeId: null,
+  cuisineFilter: 'All',
+  dietaryFilter: 'All',
+  openOrders: new Set(),
+  loading: false,
+
+  // ── Admin state ───────────────────────────────────────────────────────────
+  adminTab: 'dashboard',
+  adminStats: null,
+  adminOrders: [],
+  adminOrderFilters: { officeId: '', status: '', restaurantId: '' },
+  adminEmpOfficeFilter: '',
+  adminEmployees: [],
+  adminBudgets: [],
+
+  // ── Partner state ─────────────────────────────────────────────────────────
+  partnerTab: 'menu',
+  partnerRestaurantId: null,
+  partnerMenu: [],
+  partnerOrders: [],
+  partnerStats: null,
+  partnerPollTimer: null,
+  partnerEditingId: null,
+};
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle-2' : 'alert-circle'}"></i>${msg}`;
+  c.appendChild(el);
+  lucide.createIcons({ nodes: [el] });
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+// ── Data loaders ──────────────────────────────────────────────────────────────
+async function loadRestaurants() {
+  const q = S.cuisineFilter !== 'All' ? `?cuisine=${encodeURIComponent(S.cuisineFilter)}` : '';
+  S.restaurants = await api('/api/restaurants' + q);
+}
+
+async function loadMenu() {
+  const q = S.dietaryFilter !== 'All' ? `?dietary=${encodeURIComponent(S.dietaryFilter)}` : '';
+  S.menuItems = await api(`/api/restaurants/${S.restaurant.id}/menu` + q);
+}
+
+async function loadEmployees() {
+  if (!S.employees.length) S.employees = await api('/api/employees');
+}
+
+async function loadOffices() {
+  if (!S.offices.length) S.offices = await api('/api/offices');
+}
+
+async function loadOrders() {
+  if (!S.selectedEmployeeId) { S.orders = []; return; }
+  S.orders = await api(`/api/orders?employee_id=${S.selectedEmployeeId}`);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const RATINGS = { 1: 4.5, 2: 4.2, 3: 4.8 };
+function rating(id) { return RATINGS[id] ?? (3.8 + (id % 5) * 0.2); }
+
+function parseTags(s) { return s ? s.split(',').map(t => t.trim()).filter(Boolean) : []; }
+
+function tagHtml(tag) {
+  const cls = tag === 'vegan' ? 'vegan' : tag === 'vegetarian' ? 'vegetarian' : 'gluten-free';
+  return `<span class="tag tag-${cls}">${tag}</span>`;
+}
+
+function statusBadge(s) { return `<span class="status-badge status-${s}">${s}</span>`; }
+
+function fmtDate(s) {
+  return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function cartQty(itemId) {
+  const ci = S.cart.items.find(c => c.item.id === itemId);
+  return ci ? ci.qty : 0;
+}
+
+// ── Renderers ─────────────────────────────────────────────────────────────────
+function renderRestaurantsView() {
+  const cuisines = ['All', ...new Set(S.restaurants.map(r => r.cuisine))];
+  const chips = cuisines.map(c =>
+    `<button class="filter-chip ${c === S.cuisineFilter ? 'active' : ''}" onclick="setCuisine('${c}')">${c}</button>`
+  ).join('');
+
+  const cards = S.restaurants.length
+    ? S.restaurants.map(r => `
+        <div class="restaurant-card" onclick="openMenu(${r.id})">
+          <div class="restaurant-name">${escHtml(r.name)}</div>
+          <div class="restaurant-meta">
+            <span class="restaurant-meta-item">
+              <i data-lucide="tag" style="width:14px;height:14px"></i>${escHtml(r.cuisine)}
+            </span>
+            <span class="restaurant-meta-item">
+              <i data-lucide="clock" style="width:14px;height:14px"></i>${r.delivery_time_min} min
+            </span>
+            <span class="restaurant-meta-item">
+              <i data-lucide="star" style="width:14px;height:14px;color:#eab308;fill:#eab308"></i>${rating(r.id)}
+            </span>
+          </div>
+        </div>`).join('')
+    : `<p style="color:var(--text-muted);grid-column:1/-1">No restaurants found.</p>`;
+
+  return `
+    <div class="view">
+      <div class="nav-tabs">
+        <button class="nav-tab active">Restaurants</button>
+        <button class="nav-tab" onclick="showOrders()">My Orders</button>
+      </div>
+      <div class="filter-bar">${chips}</div>
+      <div class="restaurant-grid">${cards}</div>
+    </div>`;
+}
+
+function renderMenuView() {
+  const r = S.restaurant;
+  const dietaryOpts = ['All', 'vegan', 'vegetarian', 'gluten-free'];
+  const chips = dietaryOpts.map(d =>
+    `<button class="filter-chip ${d === S.dietaryFilter ? 'active' : ''}" onclick="setDietary('${d}')">${d}</button>`
+  ).join('');
+
+  const groups = {};
+  for (const item of S.menuItems) {
+    const cat = item.category || 'Other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(item);
+  }
+
+  const categories = Object.entries(groups).map(([cat, items]) => {
+    const cards = items.map(item => {
+      const tags = parseTags(item.dietary_tags);
+      const qty = cartQty(item.id);
+      const controls = qty > 0
+        ? `<div class="qty-control">
+             <button class="qty-btn" onclick="changeQty(${item.id}, -1)">−</button>
+             <span class="qty-num">${qty}</span>
+             <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
+           </div>`
+        : `<button class="add-btn" onclick="addToCart(${item.id})">Add</button>`;
+
+      return `
+        <div class="menu-item-card">
+          <div class="menu-item-info">
+            <div class="menu-item-name">${escHtml(item.name)}</div>
+            ${item.description ? `<div class="menu-item-desc">${escHtml(item.description)}</div>` : ''}
+            <div class="dietary-tags">${tags.map(tagHtml).join('')}</div>
+          </div>
+          <div class="menu-item-right">
+            <div class="menu-item-price">$${Number(item.price).toFixed(2)}</div>
+            ${controls}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="category-block">
+        <div class="category-label">${escHtml(cat)}</div>
+        <div class="menu-items-list">${cards}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="view">
+      <button class="back-btn" onclick="showRestaurants()">
+        <i data-lucide="arrow-left" style="width:16px;height:16px"></i>Back to Restaurants
+      </button>
+      <div class="menu-header">
+        <div class="menu-title">${escHtml(r.name)}</div>
+        <div class="menu-subtitle">
+          ${escHtml(r.cuisine)} &middot; ${r.delivery_time_min} min &middot;
+          ⭐ ${rating(r.id)}
+        </div>
+      </div>
+      <div class="filter-bar">${chips}</div>
+      ${categories || '<p style="color:var(--text-muted)">No items match this filter.</p>'}
+    </div>`;
+}
+
+function renderOrdersView() {
+  const empOptions = `<option value="">-- Select Employee --</option>` +
+    S.employees.map(e =>
+      `<option value="${e.id}" ${e.id === S.selectedEmployeeId ? 'selected' : ''}>${escHtml(e.name)}</option>`
+    ).join('');
+
+  const orderCards = S.orders.map(o => {
+    const expanded = S.openOrders.has(o.id);
+    const lines = (o.items || []).map(i =>
+      `<div class="order-line">
+         <span>${escHtml(i.item_name)} × ${i.quantity}</span>
+         <span>$${(i.unit_price * i.quantity).toFixed(2)}</span>
+       </div>`
+    ).join('');
+    const notesRow = o.notes
+      ? `<div class="order-notes-row">Note: ${escHtml(o.notes)}</div>`
+      : '';
+
+    return `
+      <div class="order-card">
+        <div class="order-head" onclick="toggleOrder(${o.id})">
+          <div class="order-info">
+            <div class="order-restaurant">${escHtml(o.restaurant_name)}</div>
+            <div class="order-meta">${fmtDate(o.created_at)}</div>
+          </div>
+          ${statusBadge(o.status)}
+          <div class="order-total">$${Number(o.total).toFixed(2)}</div>
+          <i data-lucide="${expanded ? 'chevron-up' : 'chevron-down'}" style="width:16px;height:16px;color:var(--text-muted);flex-shrink:0"></i>
+        </div>
+        <div class="order-detail ${expanded ? 'open' : ''}">
+          ${lines}
+          ${notesRow}
+        </div>
+      </div>`;
+  }).join('');
+
+  let content;
+  if (!S.selectedEmployeeId) {
+    content = `<p style="color:var(--text-muted)">Select an employee to view their order history.</p>`;
+  } else if (!S.orders.length) {
+    content = `<p style="color:var(--text-muted)">No orders found for this employee.</p>`;
+  } else {
+    content = `<div class="orders-list">${orderCards}</div>`;
+  }
+
+  return `
+    <div class="view">
+      <div class="nav-tabs">
+        <button class="nav-tab" onclick="showRestaurants()">Restaurants</button>
+        <button class="nav-tab active">My Orders</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap">
+        <label style="font-size:13px;color:var(--text-muted);font-weight:600">Viewing orders for:</label>
+        <select class="form-select" style="width:auto;min-width:180px" onchange="changeOrderEmployee(this.value)">
+          ${empOptions}
+        </select>
+      </div>
+      ${content}
+    </div>`;
+}
+
+function renderCart() {
+  const sidebar = document.getElementById('cart-sidebar');
+  const totalQty = S.cart.items.reduce((s, c) => s + c.qty, 0);
+  const subtotal  = S.cart.items.reduce((s, c) => s + c.item.price * c.qty, 0);
+
+  const empOptions = `<option value="">-- Select --</option>` +
+    S.employees.map(e =>
+      `<option value="${e.id}" ${e.id === S.selectedEmployeeId ? 'selected' : ''}>${escHtml(e.name)}</option>`
+    ).join('');
+
+  const cartItemsHtml = S.cart.items.map(c => `
+    <div class="cart-item">
+      <span class="cart-item-name">${escHtml(c.item.name)}</span>
+      <span class="cart-item-qty">× ${c.qty}</span>
+      <span class="cart-item-price">$${(c.item.price * c.qty).toFixed(2)}</span>
+      <button class="cart-remove-btn" onclick="removeFromCart(${c.item.id})">
+        <i data-lucide="x" style="width:13px;height:13px"></i>
+      </button>
+    </div>`).join('');
+
+  const hasItems = S.cart.items.length > 0;
+
+  sidebar.innerHTML = `
+    <div class="cart-head">
+      <div class="cart-head-title">
+        <i data-lucide="shopping-cart" style="width:16px;height:16px"></i>
+        Cart
+        ${totalQty > 0 ? `<span class="cart-badge">${totalQty}</span>` : ''}
+      </div>
+      ${S.cart.restaurantName ? `<span class="cart-restaurant-label">${escHtml(S.cart.restaurantName)}</span>` : ''}
+    </div>
+
+    <div class="cart-body">
+      ${hasItems ? cartItemsHtml : `
+        <div class="cart-empty">
+          <i data-lucide="shopping-cart" style="width:44px;height:44px;opacity:.25"></i>
+          <span>Cart is empty</span>
+        </div>`}
+    </div>
+
+    ${hasItems ? `
+      <div class="cart-foot">
+        <div class="cart-subtotal">
+          <span>Subtotal</span>
+          <span>$${subtotal.toFixed(2)}</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Employee</label>
+          <select class="form-select" id="cart-employee" onchange="setEmployee(this.value)">
+            ${empOptions}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dietary Notes</label>
+          <textarea class="form-textarea" id="cart-notes" placeholder="Allergies, preferences…"></textarea>
+        </div>
+        <button class="btn-primary" onclick="placeOrder()">
+          <i data-lucide="check" style="width:15px;height:15px"></i>Place Order
+        </button>
+        <button class="btn-ghost" onclick="clearCart()">Clear Cart</button>
+      </div>` : ''}
+  `;
+  lucide.createIcons({ nodes: [sidebar] });
+}
+
+// ── Main render dispatcher ────────────────────────────────────────────────────
+function renderMain() {
+  const layout = document.querySelector('.app-layout');
+
+  if (S.role === 'admin') {
+    layout.classList.add('hide-sidebar');
+    renderAdminView();
+    return;
+  }
+
+  if (S.role === 'partner') {
+    layout.classList.add('hide-sidebar');
+    renderPartnerView();
+    return;
+  }
+
+  layout.classList.remove('hide-sidebar');
+
+  const main = document.getElementById('main-content');
+
+  if (S.loading) {
+    main.innerHTML = '<div class="spinner"></div>';
+    return;
+  }
+
+  const html =
+    S.view === 'restaurants' ? renderRestaurantsView() :
+    S.view === 'menu'        ? renderMenuView() :
+    S.view === 'orders'      ? renderOrdersView() : '';
+
+  main.innerHTML = html;
+  lucide.createIcons({ nodes: [main] });
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+async function switchRole(role, btn) {
+  // Cleanup from previous role
+  stopPartnerPoll();
+  destroyAllCharts();
+
+  S.role = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if (role === 'admin') {
+    S.adminTab = 'dashboard';
+    S.loading = true; renderMain();
+    try { await loadAdminStats(); } catch (e) { toast(e.message, 'error'); }
+    S.loading = false; renderMain();
+  } else if (role === 'partner') {
+    S.partnerTab = 'menu';
+    if (!S.partnerRestaurantId && S.restaurants.length) {
+      S.partnerRestaurantId = S.restaurants[0].id;
+    }
+    S.loading = true; renderMain();
+    try { await loadPartnerMenu(); } catch (e) { toast(e.message, 'error'); }
+    S.loading = false; renderMain();
+  } else {
+    renderMain();
+  }
+}
+
+async function setCuisine(c) {
+  S.cuisineFilter = c;
+  S.loading = true; renderMain();
+  await loadRestaurants();
+  S.loading = false; renderMain();
+}
+
+async function setDietary(d) {
+  S.dietaryFilter = d;
+  S.loading = true; renderMain();
+  await loadMenu();
+  S.loading = false; renderMain();
+}
+
+async function openMenu(restaurantId) {
+  S.restaurant = S.restaurants.find(r => r.id === restaurantId);
+  S.view = 'menu';
+  S.dietaryFilter = 'All';
+  S.loading = true; renderMain();
+  await loadMenu();
+  S.loading = false; renderMain();
+}
+
+function showRestaurants() {
+  S.view = 'restaurants';
+  renderMain();
+}
+
+async function showOrders() {
+  S.view = 'orders';
+  S.loading = true; renderMain();
+  await loadOrders();
+  S.loading = false; renderMain();
+}
+
+function addToCart(itemId) {
+  const item = S.menuItems.find(i => i.id === itemId);
+  if (!item) return;
+
+  if (S.cart.restaurantId && S.cart.restaurantId !== item.restaurant_id) {
+    if (!confirm('Your cart has items from another restaurant. Clear and start over?')) return;
+    S.cart = { restaurantId: null, restaurantName: '', items: [] };
+  }
+
+  S.cart.restaurantId  = item.restaurant_id;
+  S.cart.restaurantName = S.restaurant?.name || '';
+
+  const existing = S.cart.items.find(c => c.item.id === itemId);
+  if (existing) { existing.qty++; }
+  else          { S.cart.items.push({ item, qty: 1 }); }
+
+  renderMain();
+  renderCart();
+}
+
+function changeQty(itemId, delta) {
+  const ci = S.cart.items.find(c => c.item.id === itemId);
+  if (!ci) return;
+  ci.qty += delta;
+  if (ci.qty <= 0) {
+    S.cart.items = S.cart.items.filter(c => c.item.id !== itemId);
+    if (!S.cart.items.length) S.cart.restaurantId = null;
+  }
+  renderMain();
+  renderCart();
+}
+
+function removeFromCart(itemId) {
+  S.cart.items = S.cart.items.filter(c => c.item.id !== itemId);
+  if (!S.cart.items.length) S.cart.restaurantId = null;
+  renderCart();
+}
+
+function clearCart() {
+  S.cart = { restaurantId: null, restaurantName: '', items: [] };
+  renderCart();
+}
+
+function setEmployee(id) {
+  S.selectedEmployeeId = id ? parseInt(id) : null;
+}
+
+async function changeOrderEmployee(id) {
+  S.selectedEmployeeId = id ? parseInt(id) : null;
+  S.loading = true; renderMain();
+  await loadOrders();
+  S.loading = false; renderMain();
+}
+
+function toggleOrder(id) {
+  if (S.openOrders.has(id)) S.openOrders.delete(id);
+  else S.openOrders.add(id);
+  renderMain();
+}
+
+async function placeOrder() {
+  const empEl   = document.getElementById('cart-employee');
+  const notesEl = document.getElementById('cart-notes');
+  const empId   = empEl ? parseInt(empEl.value) : null;
+  const notes   = notesEl ? notesEl.value.trim() : '';
+
+  if (!empId) { toast('Please select an employee', 'error'); return; }
+
+  const emp = S.employees.find(e => e.id === empId);
+  if (!emp) { toast('Employee not found', 'error'); return; }
+
+  const body = {
+    employee_id:   empId,
+    office_id:     emp.office_id,
+    restaurant_id: S.cart.restaurantId,
+    notes,
+    items: S.cart.items.map(c => ({ menu_item_id: c.item.id, quantity: c.qty })),
+  };
+
+  try {
+    const order = await api('/api/orders', { method: 'POST', body: JSON.stringify(body) });
+    toast(`Order placed! Total: $${Number(order.total).toFixed(2)}`);
+    S.cart = { restaurantId: null, restaurantName: '', items: [] };
+    S.selectedEmployeeId = empId;
+    renderCart();
+    setTimeout(() => showOrders(), 700);
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Chart management ─────────────────────────────────────────────────────────
+const _charts = {};
+function destroyChart(name) {
+  if (_charts[name]) { _charts[name].destroy(); delete _charts[name]; }
+}
+function destroyAllCharts() {
+  Object.keys(_charts).forEach(n => { _charts[n].destroy(); });
+  for (const k in _charts) delete _charts[k];
+}
+
+const CHART_DEFAULTS = {
+  color: '#f1f5f9',
+  borderColor: '#475569',
+  gridColor: 'rgba(71,85,105,.3)',
+};
+
+// ── Admin data loaders ────────────────────────────────────────────────────────
+async function loadAdminStats() {
+  S.adminStats = await api('/api/dashboard/stats');
+}
+
+async function loadAdminOrders() {
+  const f = S.adminOrderFilters;
+  let q = '?_=1';
+  if (f.officeId)      q += `&office_id=${f.officeId}`;
+  if (f.status)        q += `&status=${f.status}`;
+  if (f.restaurantId)  q += `&restaurant_id=${f.restaurantId}`;
+  S.adminOrders = await api('/api/orders' + q);
+}
+
+async function loadAdminEmployees() {
+  S.adminEmployees = await api('/api/dashboard/employee-stats');
+}
+
+async function loadAdminBudgets() {
+  S.adminBudgets = await api('/api/dashboard/office-budgets');
+}
+
+// ── Admin renderers ───────────────────────────────────────────────────────────
+function renderAdminView() {
+  const main = document.getElementById('main-content');
+  const tabs = ['dashboard','orders','employees','budget'];
+  const labels = { dashboard:'Dashboard', orders:'Orders', employees:'Employees', budget:'Budget' };
+
+  const tabBar = tabs.map(t =>
+    `<button class="nav-tab ${t === S.adminTab ? 'active' : ''}" onclick="switchAdminTab('${t}')">${labels[t]}</button>`
+  ).join('');
+
+  let content;
+  if (S.loading) {
+    content = '<div class="spinner"></div>';
+  } else if (S.adminTab === 'dashboard') {
+    content = renderAdminDashboard();
+  } else if (S.adminTab === 'orders') {
+    content = renderAdminOrders();
+  } else if (S.adminTab === 'employees') {
+    content = renderAdminEmployees();
+  } else {
+    content = renderAdminBudget();
+  }
+
+  main.innerHTML = `<div class="view"><div class="nav-tabs">${tabBar}</div>${content}</div>`;
+  lucide.createIcons({ nodes: [main] });
+
+  if (S.adminTab === 'dashboard' && S.adminStats) buildAdminCharts();
+  if (S.adminTab === 'budget' && S.adminStats) buildSpendChart();
+}
+
+function renderAdminDashboard() {
+  const st = S.adminStats;
+  if (!st) return '<div class="spinner"></div>';
+
+  return `
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-label">Orders Today</div>
+        <div class="stat-value">${st.orders_today}</div>
+        <div class="stat-sub">$${(st.spend_today||0).toFixed(2)} spent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Spend Today</div>
+        <div class="stat-value">$${(st.spend_today||0).toFixed(2)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Orders</div>
+        <div class="stat-value">${st.active_orders}</div>
+        <div class="stat-sub">placed / confirmed / preparing</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Order Value</div>
+        <div class="stat-value">$${(st.avg_order_value||0).toFixed(2)}</div>
+        <div class="stat-sub">${st.total_orders} total orders</div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="chart-title">Orders per day — last 7 days</div>
+        <div class="chart-container"><canvas id="chart-orders-day"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Spend by restaurant</div>
+        <div class="chart-container"><canvas id="chart-spend-rest"></canvas></div>
+      </div>
+    </div>`;
+}
+
+function buildAdminCharts() {
+  const st = S.adminStats;
+  destroyChart('orders-day');
+  destroyChart('spend-rest');
+
+  const dayCanvas = document.getElementById('chart-orders-day');
+  if (dayCanvas) {
+    _charts['orders-day'] = new Chart(dayCanvas, {
+      type: 'bar',
+      data: {
+        labels: st.orders_by_day.map(d => d.date.slice(5)),
+        datasets: [{
+          label: 'Orders',
+          data: st.orders_by_day.map(d => d.count),
+          backgroundColor: 'rgba(99,102,241,.65)',
+          borderColor: '#6366f1',
+          borderWidth: 1,
+          borderRadius: 5,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: CHART_DEFAULTS.color }, grid: { color: CHART_DEFAULTS.gridColor } },
+          y: { ticks: { color: CHART_DEFAULTS.color }, grid: { color: CHART_DEFAULTS.gridColor }, beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  const restCanvas = document.getElementById('chart-spend-rest');
+  if (restCanvas && st.top_restaurants.length) {
+    const colors = ['#6366f1','#22c55e','#f97316','#eab308','#ec4899'];
+    _charts['spend-rest'] = new Chart(restCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: st.top_restaurants.map(r => r.name),
+        datasets: [{
+          data: st.top_restaurants.map(r => r.total_spend),
+          backgroundColor: colors.slice(0, st.top_restaurants.length),
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: CHART_DEFAULTS.color, font: { size: 12 } } },
+        },
+      },
+    });
+  }
+}
+
+function renderAdminOrders() {
+  const offices = S.offices;
+  const restaurants = S.restaurants;
+  const statuses = ['placed','confirmed','preparing','delivered','cancelled'];
+
+  const officeOpts = `<option value="">All Offices</option>` +
+    offices.map(o => `<option value="${o.id}" ${o.id == S.adminOrderFilters.officeId ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('');
+  const restOpts = `<option value="">All Restaurants</option>` +
+    restaurants.map(r => `<option value="${r.id}" ${r.id == S.adminOrderFilters.restaurantId ? 'selected' : ''}>${escHtml(r.name)}</option>`).join('');
+  const statusOpts = `<option value="">All Statuses</option>` +
+    statuses.map(s => `<option value="${s}" ${s === S.adminOrderFilters.status ? 'selected' : ''}>${s}</option>`).join('');
+
+  const rows = S.adminOrders.map(o => {
+    const statusSel = statuses.map(s =>
+      `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`
+    ).join('');
+    return `
+      <tr>
+        <td>#${o.id}</td>
+        <td>${escHtml(o.employee_name || '—')}</td>
+        <td>${escHtml(o.restaurant_name || '—')}</td>
+        <td>$${Number(o.total).toFixed(2)}</td>
+        <td>${fmtDate(o.created_at)}</td>
+        <td>
+          <select class="form-select" style="width:auto;font-size:12px;padding:4px 8px"
+            onchange="adminUpdateOrderStatus(${o.id}, this.value)">
+            ${statusSel}
+          </select>
+        </td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <div class="admin-filters">
+      <select class="form-select" onchange="adminFilterChange('officeId', this.value)">${officeOpts}</select>
+      <select class="form-select" onchange="adminFilterChange('restaurantId', this.value)">${restOpts}</select>
+      <select class="form-select" onchange="adminFilterChange('status', this.value)">${statusOpts}</select>
+      <span style="font-size:13px;color:var(--text-muted)">${S.adminOrders.length} orders</span>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>#</th><th>Employee</th><th>Restaurant</th><th>Total</th><th>Date</th><th>Status</th>
+        </tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:28px">No orders found.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderAdminEmployees() {
+  const offices = [...new Set(S.adminEmployees.map(e => e.office_name))].filter(Boolean);
+  const officeOpts = `<option value="">All Offices</option>` +
+    offices.map(o => `<option value="${o}" ${o === S.adminEmpOfficeFilter ? 'selected' : ''}>${escHtml(o)}</option>`).join('');
+
+  const filter = S.adminEmpOfficeFilter;
+  const shown = filter ? S.adminEmployees.filter(e => e.office_name === filter) : S.adminEmployees;
+
+  const rows = shown.map(e => `
+    <tr>
+      <td>${escHtml(e.name)}</td>
+      <td style="color:var(--text-muted)">${escHtml(e.email)}</td>
+      <td>${escHtml(e.office_name || '—')}</td>
+      <td>${e.order_count}</td>
+      <td>$${Number(e.total_spend).toFixed(2)}</td>
+      <td>
+        <button class="btn-sm ${e.role === 'admin' ? 'btn-sm-primary' : 'btn-sm-ghost'}"
+          onclick="toggleEmployeeRole(${e.id}, '${e.role}')">
+          ${e.role === 'admin' ? 'Admin' : 'Employee'}
+        </button>
+      </td>
+    </tr>`).join('');
+
+  return `
+    <div class="admin-filters">
+      <select class="form-select" id="admin-emp-office" onchange="S.adminEmpOfficeFilter=this.value;renderAdminView()">${officeOpts}</select>
+      <span style="font-size:13px;color:var(--text-muted)">${shown.length} employees</span>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Office</th><th>Orders</th><th>Total Spend</th><th>Role</th>
+        </tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:28px">No employees found.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderAdminBudget() {
+  const cards = S.adminBudgets.map(b => {
+    const avg = b.month_orders > 0 ? b.month_spend / b.month_orders : 0;
+    const over = avg > b.budget_per_order && b.month_orders > 0;
+    return `
+      <div class="budget-card ${over ? 'over-budget' : ''}">
+        <div class="budget-office">${escHtml(b.name)}</div>
+        <div class="budget-row"><span>Budget per order</span><strong>$${Number(b.budget_per_order).toFixed(2)}</strong></div>
+        <div class="budget-row"><span>Orders this month</span><strong>${b.month_orders}</strong></div>
+        <div class="budget-row"><span>Total spend this month</span><strong>$${Number(b.month_spend).toFixed(2)}</strong></div>
+        <div class="budget-row"><span>Avg order value</span><strong>$${avg.toFixed(2)}</strong></div>
+        <div class="budget-row"><span>Active orders</span><strong>${b.active_orders}</strong></div>
+        ${over ? `<div class="budget-alert">⚠ Avg order ($${avg.toFixed(2)}) exceeds budget ($${Number(b.budget_per_order).toFixed(2)})</div>` : ''}
+      </div>`;
+  }).join('');
+
+  return `<div class="budget-grid">${cards || '<p style="color:var(--text-muted)">No office data.</p>'}</div>`;
+}
+
+// ── Admin actions ─────────────────────────────────────────────────────────────
+async function switchAdminTab(tab) {
+  S.adminTab = tab;
+  destroyAllCharts();
+  S.loading = true; renderAdminView();
+
+  try {
+    if (tab === 'dashboard') await loadAdminStats();
+    else if (tab === 'orders') await Promise.all([loadAdminOrders(), loadOffices()]);
+    else if (tab === 'employees') await loadAdminEmployees();
+    else if (tab === 'budget') await loadAdminBudgets();
+  } catch (e) { toast(e.message, 'error'); }
+
+  S.loading = false; renderAdminView();
+}
+
+async function adminFilterChange(key, value) {
+  S.adminOrderFilters[key] = value;
+  S.loading = true; renderAdminView();
+  try { await loadAdminOrders(); } catch (e) { toast(e.message, 'error'); }
+  S.loading = false; renderAdminView();
+}
+
+async function adminUpdateOrderStatus(orderId, status) {
+  try {
+    await api(`/api/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    toast(`Order #${orderId} → ${status}`);
+    await loadAdminOrders();
+    renderAdminView();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleEmployeeRole(empId, currentRole) {
+  const newRole = currentRole === 'admin' ? 'employee' : 'admin';
+  try {
+    await api(`/api/employees/${empId}`, { method: 'PATCH', body: JSON.stringify({ role: newRole }) });
+    toast(`Role updated to ${newRole}`);
+    await loadAdminEmployees();
+    renderAdminView();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── Partner data loaders ──────────────────────────────────────────────────────
+async function loadPartnerMenu() {
+  if (!S.partnerRestaurantId) return;
+  S.partnerMenu = await api(`/api/restaurants/${S.partnerRestaurantId}/menu?all=1`);
+}
+
+async function loadPartnerOrders() {
+  if (!S.partnerRestaurantId) return;
+  S.partnerOrders = await api(`/api/orders?restaurant_id=${S.partnerRestaurantId}`);
+}
+
+async function loadPartnerStats() {
+  if (!S.partnerRestaurantId) return;
+  S.partnerStats = await api(`/api/restaurants/${S.partnerRestaurantId}/stats`);
+}
+
+// ── Partner renderers ─────────────────────────────────────────────────────────
+function renderPartnerView() {
+  const main = document.getElementById('main-content');
+  const tabs = ['menu','orders','revenue'];
+  const labels = { menu:'Menu Management', orders:'Incoming Orders', revenue:'Revenue' };
+
+  if (!S.restaurants.length) {
+    main.innerHTML = '<div class="spinner"></div>';
+    return;
+  }
+
+  const restOpts = S.restaurants.map(r =>
+    `<option value="${r.id}" ${r.id == S.partnerRestaurantId ? 'selected' : ''}>${escHtml(r.name)}</option>`
+  ).join('');
+
+  const tabBar = tabs.map(t =>
+    `<button class="nav-tab ${t === S.partnerTab ? 'active' : ''}" onclick="switchPartnerTab('${t}')">${labels[t]}</button>`
+  ).join('');
+
+  let content;
+  if (S.loading) {
+    content = '<div class="spinner"></div>';
+  } else if (S.partnerTab === 'menu') {
+    content = renderPartnerMenu();
+  } else if (S.partnerTab === 'orders') {
+    content = renderPartnerOrders();
+  } else {
+    content = renderPartnerRevenue();
+  }
+
+  main.innerHTML = `
+    <div class="view">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+        <label class="form-label" style="margin:0;white-space:nowrap">Managing:</label>
+        <select class="form-select" style="width:auto;min-width:180px" onchange="switchPartnerRestaurant(this.value)">
+          ${restOpts}
+        </select>
+      </div>
+      <div class="nav-tabs">${tabBar}</div>
+      ${content}
+    </div>`;
+  lucide.createIcons({ nodes: [main] });
+
+  if (S.partnerTab === 'revenue' && S.partnerStats) buildPartnerRevenueChart();
+}
+
+function renderPartnerMenu() {
+  if (!S.partnerRestaurantId) return '<p style="color:var(--text-muted)">Select a restaurant above.</p>';
+
+  const groups = {};
+  for (const item of S.partnerMenu) {
+    const cat = item.category || 'Other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(item);
+  }
+
+  const sections = Object.entries(groups).map(([cat, items]) => {
+    const rows = items.map(item => {
+      const editing = S.partnerEditingId === item.id;
+      const editForm = editing ? `
+        <div class="edit-form">
+          <div class="form-group" style="margin:0"><label class="form-label">Name</label>
+            <input class="form-input" id="edit-name-${item.id}" value="${escHtml(item.name)}"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Price</label>
+            <input class="form-input" type="number" step="0.01" id="edit-price-${item.id}" value="${item.price}"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Category</label>
+            <input class="form-input" id="edit-cat-${item.id}" value="${escHtml(item.category||'')}"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Dietary Tags</label>
+            <input class="form-input" id="edit-tags-${item.id}" value="${escHtml(item.dietary_tags||'')}"></div>
+          <div class="edit-form-actions">
+            <button class="btn-sm btn-sm-primary" onclick="saveMenuItemEdit(${item.id})">Save</button>
+            <button class="btn-sm btn-sm-ghost" onclick="cancelMenuEdit()">Cancel</button>
+          </div>
+        </div>` : '';
+
+      return `
+        <div class="menu-manage-item">
+          <div class="mmi-top">
+            <div class="mmi-info">
+              <div class="mmi-name">${escHtml(item.name)}</div>
+              <div class="mmi-meta">${escHtml(item.category||'')}${item.dietary_tags ? ' · ' + escHtml(item.dietary_tags) : ''}</div>
+            </div>
+            <div class="mmi-price">$${Number(item.price).toFixed(2)}</div>
+            <div class="mmi-actions">
+              <button class="avail-btn ${item.available ? 'on' : ''}"
+                onclick="toggleMenuItemAvailable(${item.id}, ${item.available})">
+                ${item.available ? 'Available' : 'Hidden'}
+              </button>
+              <button class="btn-sm btn-sm-ghost" onclick="startMenuItemEdit(${item.id})">Edit</button>
+              <button class="btn-sm btn-sm-danger" onclick="confirmDeleteMenuItem(${item.id}, '${escHtml(item.name)}')">Del</button>
+            </div>
+          </div>
+          ${editForm}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="menu-manage-section">
+        <div class="category-label">${escHtml(cat)}</div>
+        <div class="menu-manage-list">${rows}</div>
+      </div>`;
+  }).join('');
+
+  return `
+    ${sections || '<p style="color:var(--text-muted);margin-bottom:24px">No menu items yet.</p>'}
+    <div class="add-item-card">
+      <h3>Add New Item</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Name *</label>
+          <input class="form-input" id="new-name" placeholder="Item name"></div>
+        <div class="form-group"><label class="form-label">Price *</label>
+          <input class="form-input" id="new-price" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <input class="form-input" id="new-cat" placeholder="e.g. Burgers"></div>
+        <div class="form-group"><label class="form-label">Dietary Tags</label>
+          <input class="form-input" id="new-tags" placeholder="vegan, gluten-free"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label>
+        <textarea class="form-textarea" id="new-desc" placeholder="Short description…"></textarea></div>
+      <button class="btn-primary" style="max-width:200px;margin-top:6px" onclick="addMenuItem()">
+        <i data-lucide="plus" style="width:15px;height:15px"></i>Add Item
+      </button>
+    </div>`;
+}
+
+function renderPartnerOrders() {
+  if (!S.partnerRestaurantId) return '<p style="color:var(--text-muted)">Select a restaurant above.</p>';
+
+  // Show only active orders first, then delivered/cancelled
+  const sorted = [...S.partnerOrders].sort((a, b) => {
+    const priority = { placed: 0, confirmed: 1, preparing: 2, delivered: 3, cancelled: 4 };
+    return (priority[a.status] ?? 5) - (priority[b.status] ?? 5);
+  });
+
+  const cards = sorted.map(o => {
+    const itemLines = (o.items || []).map(i =>
+      `<div class="queue-item-line">${escHtml(i.item_name)} × ${i.quantity}</div>`
+    ).join('');
+
+    let actions = '';
+    if (o.status === 'placed') {
+      actions = `<button class="btn-sm btn-sm-primary" onclick="partnerOrderAction(${o.id},'confirmed')">Confirm</button>`;
+    } else if (o.status === 'confirmed') {
+      actions = `<button class="btn-sm btn-sm-orange" onclick="partnerOrderAction(${o.id},'preparing')">Mark Preparing</button>`;
+    } else if (o.status === 'preparing') {
+      actions = `<button class="btn-sm btn-sm-success" onclick="partnerOrderAction(${o.id},'delivered')">Mark Delivered</button>`;
+    }
+    if (['placed','confirmed','preparing'].includes(o.status)) {
+      actions += ` <button class="btn-sm btn-sm-danger" onclick="partnerOrderAction(${o.id},'cancelled')">Cancel</button>`;
+    }
+
+    return `
+      <div class="queue-card status-${o.status}">
+        <div class="queue-head">
+          <span class="queue-id">#${o.id}</span>
+          <span class="queue-emp">${escHtml(o.employee_name || 'Unknown')}</span>
+          ${statusBadge(o.status)}
+          <span class="queue-time">${fmtDate(o.created_at)}</span>
+        </div>
+        <div class="queue-items">${itemLines}</div>
+        <div class="queue-total">$${Number(o.total).toFixed(2)}</div>
+        ${actions ? `<div class="queue-actions">${actions}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="section-head">
+      <div>
+        <div class="section-title">Order Queue</div>
+        <div class="section-sub">${S.partnerOrders.length} orders</div>
+      </div>
+      <span class="poll-badge"><span class="poll-dot"></span>Live — refreshes every 10s</span>
+    </div>
+    <div class="queue-grid">${cards || '<p style="color:var(--text-muted)">No orders yet.</p>'}</div>`;
+}
+
+function renderPartnerRevenue() {
+  const st = S.partnerStats;
+  if (!st) return '<div class="spinner"></div>';
+
+  const topRows = (st.top_items || []).map((item, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${escHtml(item.name)}</td>
+      <td>${item.count}</td>
+      <td>$${Number(item.revenue).toFixed(2)}</td>
+    </tr>`).join('');
+
+  return `
+    <div class="rev-stats">
+      <div class="stat-card">
+        <div class="stat-label">All-time Revenue</div>
+        <div class="stat-value">$${Number(st.all_time_revenue).toFixed(2)}</div>
+        <div class="stat-sub">${st.all_time_orders} orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Month</div>
+        <div class="stat-value">$${Number(st.month_revenue).toFixed(2)}</div>
+        <div class="stat-sub">${st.month_orders} orders</div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="chart-title">Revenue per day — last 7 days</div>
+        <div class="chart-container"><canvas id="chart-partner-rev"></canvas></div>
+      </div>
+      <div class="chart-box" style="display:flex;flex-direction:column">
+        <div class="chart-title">Top Selling Items</div>
+        <div class="table-wrap" style="border:none;border-radius:0;flex:1">
+          <table class="data-table" style="min-width:unset">
+            <thead><tr><th>#</th><th>Item</th><th>Sold</th><th>Revenue</th></tr></thead>
+            <tbody>${topRows || '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:20px">No data.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildPartnerRevenueChart() {
+  destroyChart('partner-rev');
+  const canvas = document.getElementById('chart-partner-rev');
+  const st = S.partnerStats;
+  if (!canvas || !st) return;
+
+  _charts['partner-rev'] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: st.orders_by_day.map(d => d.date.slice(5)),
+      datasets: [{
+        label: 'Revenue',
+        data: st.orders_by_day.map(d => d.revenue),
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,.15)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: '#6366f1',
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: CHART_DEFAULTS.color }, grid: { color: CHART_DEFAULTS.gridColor } },
+        y: { ticks: { color: CHART_DEFAULTS.color, callback: v => '$' + v }, grid: { color: CHART_DEFAULTS.gridColor }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+// ── Partner actions ───────────────────────────────────────────────────────────
+async function switchPartnerTab(tab) {
+  S.partnerTab = tab;
+  destroyAllCharts();
+  S.loading = true; renderPartnerView();
+
+  try {
+    if (tab === 'menu') await loadPartnerMenu();
+    else if (tab === 'orders') await loadPartnerOrders();
+    else if (tab === 'revenue') await loadPartnerStats();
+  } catch (e) { toast(e.message, 'error'); }
+
+  S.loading = false; renderPartnerView();
+}
+
+async function switchPartnerRestaurant(id) {
+  S.partnerRestaurantId = parseInt(id);
+  stopPartnerPoll();
+  S.loading = true; renderPartnerView();
+
+  try {
+    if (S.partnerTab === 'menu') await loadPartnerMenu();
+    else if (S.partnerTab === 'orders') await loadPartnerOrders();
+    else if (S.partnerTab === 'revenue') await loadPartnerStats();
+  } catch (e) { toast(e.message, 'error'); }
+
+  S.loading = false; renderPartnerView();
+  if (S.partnerTab === 'orders') startPartnerPoll();
+}
+
+function startPartnerPoll() {
+  stopPartnerPoll();
+  S.partnerPollTimer = setInterval(async () => {
+    try { await loadPartnerOrders(); renderPartnerView(); } catch (_) {}
+  }, 10000);
+}
+
+function stopPartnerPoll() {
+  if (S.partnerPollTimer) { clearInterval(S.partnerPollTimer); S.partnerPollTimer = null; }
+}
+
+async function partnerOrderAction(orderId, status) {
+  try {
+    await api(`/api/orders/${orderId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    toast(`Order #${orderId} → ${status}`);
+    await loadPartnerOrders();
+    renderPartnerView();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function startMenuItemEdit(id) {
+  S.partnerEditingId = id;
+  renderPartnerView();
+}
+
+function cancelMenuEdit() {
+  S.partnerEditingId = null;
+  renderPartnerView();
+}
+
+async function saveMenuItemEdit(id) {
+  const name  = document.getElementById(`edit-name-${id}`)?.value?.trim();
+  const price = parseFloat(document.getElementById(`edit-price-${id}`)?.value);
+  const cat   = document.getElementById(`edit-cat-${id}`)?.value?.trim();
+  const tags  = document.getElementById(`edit-tags-${id}`)?.value?.trim();
+
+  if (!name || isNaN(price)) { toast('Name and price are required', 'error'); return; }
+
+  try {
+    await api(`/api/menu-items/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name, price, category: cat, dietary_tags: tags }),
+    });
+    toast('Menu item updated');
+    S.partnerEditingId = null;
+    await loadPartnerMenu();
+    renderPartnerView();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleMenuItemAvailable(id, current) {
+  try {
+    await api(`/api/menu-items/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ available: !current }),
+    });
+    toast(`Item ${!current ? 'enabled' : 'hidden'}`);
+    await loadPartnerMenu();
+    renderPartnerView();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function addMenuItem() {
+  const name  = document.getElementById('new-name')?.value?.trim();
+  const price = parseFloat(document.getElementById('new-price')?.value);
+  const cat   = document.getElementById('new-cat')?.value?.trim();
+  const tags  = document.getElementById('new-tags')?.value?.trim();
+  const desc  = document.getElementById('new-desc')?.value?.trim();
+
+  if (!name || isNaN(price)) { toast('Name and price are required', 'error'); return; }
+
+  try {
+    await api('/api/menu-items', {
+      method: 'POST',
+      body: JSON.stringify({ restaurant_id: S.partnerRestaurantId, name, price, category: cat, dietary_tags: tags, description: desc }),
+    });
+    toast(`"${name}" added to menu`);
+    await loadPartnerMenu();
+    renderPartnerView();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function confirmDeleteMenuItem(id, name) {
+  if (!confirm(`Delete "${name}" from the menu?`)) return;
+  try {
+    await api(`/api/menu-items/${id}`, { method: 'DELETE' });
+    toast(`"${name}" deleted`);
+    await loadPartnerMenu();
+    renderPartnerView();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  S.loading = true;
+  renderMain();
+  renderCart();
+
+  try {
+    await Promise.all([loadRestaurants(), loadEmployees(), loadOffices()]);
+  } catch (err) {
+    document.getElementById('main-content').innerHTML = `
+      <div class="placeholder view">
+        <i data-lucide="wifi-off" style="width:64px;height:64px;opacity:.2"></i>
+        <h2>Connection Error</h2>
+        <p>${err.message}<br>Make sure the backend is running on port 3000.</p>
+      </div>`;
+    lucide.createIcons({ nodes: [document.getElementById('main-content')] });
+    return;
+  }
+
+  // Default partner restaurant to first available
+  if (S.restaurants.length) S.partnerRestaurantId = S.restaurants[0].id;
+
+  S.loading = false;
+  renderMain();
+  renderCart();
+}
+
+init();
+</script>
+</body>
+</html>
