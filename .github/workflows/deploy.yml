@@ -11,8 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.app/install.sh | sh
+          
       - name: Deploy to Railway
-        uses: bervProject/railway-deploy@main
-        with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: office-food-platform
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway link --project cbfce0fb-36f8-43c7-b34c-e80de792baa4 --environment production --service c235d1f9-87c2-47f8-9e51-144740feb9f8
+          railway up --service c235d1f9-87c2-47f8-9e51-144740feb9f8 --environment production
